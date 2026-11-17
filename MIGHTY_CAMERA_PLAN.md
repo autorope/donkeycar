@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 12 / 16 commits verified**
+**Progress: 12 / 17 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -69,7 +69,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F6 | 2026-11-14 | The SDK skips JPEG handling when no image listener is registered, so a pose-only setup costs nothing extra. | `mighty_sdk/client.py` |
 | F7 | 2026-11-14 | `templates/path_follow.py` has an unused `from distutils.log import debug`. It stops `test_path_follow_mighty.py` from importing on the Mac's Python 3.12+ venv. The test passes on the car (15 passed) only because setuptools provides a `distutils` shim. | `pytest` on Mac and car |
 | F8 | 2026-11-14 | The SDK has no resolution setting. `config_get` and `config_set` take free-form keys, and none is listed for image size. Only the frames themselves carry `width` and `height` (and, for JPEG, the encoded size). The camera's size must therefore be read from a received frame. | `mighty_sdk/client.py`, `mighty_protocol.py` |
-| F9 | 2026-11-14 | `test_scripts.py::test_bad_command_fails` fails on the Mac with or without this branch's changes. It is not related to Mighty, and this plan leaves it alone. | `pytest` on Mac, with changes stashed and restored |
+| F9 | 2026-11-14 | `test_scripts.py::test_bad_command_fails` fails on the Mac with or without this branch's changes. It is not related to Mighty, and this plan leaves it alone. | `pytest` on Mac, with changes stashed and restored **Corrected 2026-11-17:** it is not a real failure. It fails only when pytest runs without the environment's `bin` on `PATH`, so the `donkey` it shells out to is not that environment's. With the environment activated (as CI's `uv run` does), all four `test_scripts.py` tests pass. |
 | F10 | 2026-11-14 | Standing still on the bench, VIO went OFF → INITIALIZING → TRACKING (confidence 0.66, 183 features) within about 2 s of `start_vio`. About 1 s later it dropped to DEGRADED (state 3, flag `LOW_TRANSLATION_OBSERVABILITY`) and stayed there for the remaining 35 s, while poses kept arriving. `MightyPose` accepts only state 2, so `mighty/valid` was False from then on. This behaviour predates this plan, which leaves it unchanged. It means a parked car shows `fresh` only briefly; the camera has to move to show sustained tracking. | 40 s `path_follow` run on murmurpi64, `logs/mighty-timing-*.jsonl` |
 | F11 | 2026-11-14 | The camera's frame rate depends on VIO. With VIO off it streamed about 18 fps (F2). With VIO left running in DEGRADED after the commit 3 drive, the camera reported `fps_current` 15–16, and a plain SDK client received 14.0 fps. Over three runs `MightyCamera` received 13.4–15.3 fps; one earlier first run gave 11.6. So the part costs no measurable rate. | Snapshot CLI and plain SDK client on murmurpi64 |
 | F12 | 2026-11-14 | The camera's frame rate cannot be set or read through config. All 18 likely key names tried with `config_get` (`fps`, `camera_fps`, `preview_fps`, `stream_fps`, `framerate`, `frame_rate`, …) returned "unknown config key". The SDK and its README document no rate control; `calib` and `apriltags` are the only keys they name. The only rate the camera reports is `fps_current` in VIO status. | Read-only `config_get` probe on murmurpi64; `mighty_sdk` source and README |
@@ -89,6 +89,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F26 | 2026-11-15 | The Keras autopilot could not be tested at depth 1: building `KerasLinear` fails with `NameError: name 'Input' is not defined` on both the Mac `.venv` and the car's `~/env`, so neither has a working Keras. From the code, a 2-D frame becomes (1, H, W) at inference while a depth 1 model expects (1, H, W, 1). That is a question for donkeycar's depth 1 path generally, not specific to the Mighty, and is not in this plan. | `KerasLinear(input_shape=(100, 160, 1))` on Mac and car |
 | F27 | 2026-11-15 | In runbook step 6 (`path_follow`, 640×400, depth 1, `CAMERA_FRAMERATE = 12`, `HAVE_MIGHTY` starting VIO, and the web UI's `/video` stream being read), the camera stopped sending images for over 1 s once. Its rate then fell to 10.5 fps, recovered to 13.4, and fell to 8.7 fps. The startup check had measured 14.4 fps. The runtime warnings fired once each as designed, and the drive kept running. The cause is not isolated: VIO starting (the camera resets, F10), encoding the 640×400 web stream on the Pi, or the SDK's CPU use (F16) are all candidates. A `CAMERA_FRAMERATE` that passes at startup can therefore still be too high once VIO runs. The docs now say so. | Runbook step 6 on murmurpi64 |
 | F28 | 2026-11-15 | Plugged into the Pi over USB, the Mighty is a wired Ethernet device whose DHCP offers a default route and DNS. NetworkManager prefers it to WiFi, so the car drops off WiFi (Ed's report). On murmurpi64 (Debian 13), its connection is named `netplan-eth0` (TYPE `ethernet`, DEVICE `usb0`), not Ed's example "Wired connection 2". So the docs find the connection by TYPE and DEVICE, not by name. That Pi already had `ipv4.never-default` and `ipv4.ignore-auto-dns` set to `yes` (the IPv6 pair `no`), and its only default route was via `wlan0`. | Ed; read-only `nmcli` and `ip route` on murmurpi64 |
+| F29 | 2026-11-17 | **PR #1255's CI failed** on macOS and Ubuntu: `test_scripts.py::test_drivesim` failed with `OSError: Address already in use` (267 passed). Two template tests ran a real `complete.drive()` / `cv_control.drive()` in the pytest process, which starts `LocalWebController` on `WEB_CONTROL_PORT` 8887 in a thread that is never stopped. `test_mighty_templates.py` runs before `test_scripts.py`, so the port was still held when `test_drivesim`'s `donkey` subprocess tried to bind it. The older in-process drive test is in `test_template.py`, which runs after it, so it never collided. On the Mac `.venv`, `test_drivesim` is skipped (no TensorFlow), which hid the failure. Reproduced with a probe test binding 8887 after the template tests. Fixed in commit 17 (`WEB_CONTROL_PORT = 0` in the template tests' configs). | `gh pr checks 1255`, CI logs, local CI-equivalent run |
 
 ## Design
 
@@ -646,6 +647,21 @@ tests.
     - Afterwards `parts/` and `templates/` were checked as identical to
       `HEAD`.
     - The full suite gives 237 passed, plus the F9 failure.
+- [ ] **17. Stop the template tests holding port 8887 (F29).**
+  `test_mighty_templates.py`'s `car_config` now writes `WEB_CONTROL_PORT = 0`
+  unless a test sets it, so in-process `drive()` runs bind any free port.
+  - *Verify:* a probe test binding 8887 after the Mighty tests passes, where
+    before it failed with `Address already in use`.
+  - *Verify:* the full suite passes in a CI-equivalent environment.
+  - *Verify:* PR #1255's "Checkout and test" jobs pass on macOS and Ubuntu.
+  - *Mac, 2026-11-17:*
+    - The probe passed after the camera, template and `path_follow` tests
+      (83 passed). Before the fix it failed with `[Errno 48] Address
+      already in use`.
+    - CI-equivalent run: a fresh Python 3.12 environment with
+      `pip install -e ".[pc,dev]"` (TensorFlow 2.19.1, albumentations 2.0.8),
+      activated, then `python -m pytest`, gave 282 passed, 28 skipped,
+      1 xpassed and 0 failed.
 
 ## Not in this plan
 

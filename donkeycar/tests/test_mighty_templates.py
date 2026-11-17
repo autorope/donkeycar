@@ -64,10 +64,17 @@ class MightyTemplateCase(unittest.TestCase):
 
         Each test gets its own directory: a data tub left by another template
         has different fields and stops the tub writer.
+
+        WEB_CONTROL_PORT defaults to 0 (any free port). A drive() run here
+        starts the web controller in a thread that is never stopped, so on
+        the template's 8887 it would hold that port for the rest of the pytest
+        session and break test_scripts.py::test_drivesim, which runs later
+        and needs 8887 (plan F29).
         """
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         path = custom_template(d2_path(temp.name), template=template)
+        settings = dict(dict(WEB_CONTROL_PORT=0), **settings)
         with open(os.path.join(path, 'myconfig.py'), 'wt') as myconfig:
             for name, value in settings.items():
                 myconfig.write(f'{name} = {value!r}\n')
