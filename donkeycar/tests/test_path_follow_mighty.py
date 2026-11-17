@@ -55,7 +55,7 @@ class TemplateTests(unittest.TestCase):
     def build(self, camera=False, measured_fps=13.5):
         """Construct the template. With camera, add_camera runs for real against
         a fake SDK client that delivers 640x400 frames, measuring measured_fps."""
-        vehicle = VehicleGraph()
+        vehicle = self.vehicle = VehicleGraph()
         client = MagicMock() if not camera else MagicMock(
             side_effect=lambda *args, **kwargs: self.clients.append(camera_tests.FakeClient())
             or self.clients[-1])
@@ -173,6 +173,22 @@ class TemplateTests(unittest.TestCase):
         with self.assertRaisesRegex(CameraError, 'CAMERA_FRAMERATE = 20: the camera is sending '
                                                  '13.5 fps.*CAMERA_FRAMERATE = 14,'):
             self.build(camera=True)
+
+    def test_failed_camera_start_closes_the_shared_stream(self):
+        # Plan F30: with HAVE_MIGHTY the pose reader is added first and shares
+        # the link; the camera opens the stream, then fails its size check.
+        self.mighty_camera_config()
+        self.cfg.IMAGE_H = 120  # not 16:10
+        with self.assertRaisesRegex(CameraError, 'IMAGE_W = 192 and IMAGE_H = 120'):
+            self.build(camera=True)
+        [pose] = [p['part'] for p in self.vehicle.parts if isinstance(p['part'], MightyPose)]
+        self.addCleanup(pose.shutdown)
+        [client] = self.clients
+        client.connect.assert_called_once()
+        client.disconnect.assert_called_once()  # the camera closed what it opened
+        self.assertFalse(pose.link.connected)
+        self.assertEqual(pose.link.users, 1)    # the pose reader keeps its share
+        self.assertTrue(pose.link.connect())     # and would reopen it on start
 
     def test_simultaneous_gps_is_separate_and_does_not_replay(self):
         self.cfg.HAVE_GPS = True

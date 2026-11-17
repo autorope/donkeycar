@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 14 / 17 commits verified**
+**Progress: 14 / 18 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -56,6 +56,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | D19 | 2026-11-15 | **The `basic` template does not support the Mighty camera.** Ed: "The basic template does not need to support the mighty camera. Let's get rid of commit 12 and record that decision." Commit 12 (`d928c7ca`: a `MIGHTY` branch in `basic.py` calling `get_mighty_camera`, a Mighty block in `cfg_basic.py`, and 3 template tests) was written and tested on the Mac but never pushed. It was dropped from the branch with `git reset --hard`, so `basic.py` and `cfg_basic.py` are unchanged from `zlite/mighty-camera-gps`. With `CAMERA_TYPE = "MIGHTY"`, `basic` raises its usual "Unkown camera type". The docs commit is renumbered from 13 to 12. | Ed | Decided |
 | D20 | 2026-11-17 | **`CAMERA_FRAMERATE` is a minimum, not a maximum.** Ed: "I am ok with publishing faster than CAMERA_FRAMERATE. We should consider this a minimum, not a maximum." `MightyCamera` publishes every frame as it arrives; the 0.9-period pacing from D14 (`seconds_until_due`, `DUE_FRACTION`) is removed. The startup check stays the same: fail if the camera cannot reach `CAMERA_FRAMERATE` (within 5%) and name the rate to use. It never forces output slower than the camera. The runtime warning stays, as advice only: it suggests a lower rate, but the configured minimum and publishing are unchanged. The startup log says "CAMERA_FRAMERATE minimum N fps" instead of "publishing up to N fps". | Ed | Decided |
 | D21 | 2026-11-17 | **Defer construction-failure cleanup in `path_follow` (F30) to a later PR.** Claude wrote it as commit 18 (`c7d1a58d`): construction moved into `add_parts()`, with `drive()` running `shutdown_parts(V)` on any exception before re-raising, plus 4 tests. Ed: "That last commit … is too big a change for this PR. I will need to do another time. Please revert that commit." It had not been pushed, so it was dropped from `mighty-camera-image` (`git reset --hard`) instead of reverted, keeping the PR free of the change and its undo. It is kept on the local branch `claude/path-follow-construction-cleanup` (Ed's Mac only, not pushed) for that later PR. | Ed | Decided |
+| D22 | 2026-11-17 | **Fix the costly part of F30 in `mighty.py` alone.** A camera that opened the stream and then fails to start closes it again (`MightyLink.close_stream()`) when another part (the pose reader) still shares the link, leaving the link as it found it. That part reopens the stream itself in `update()` if the vehicle starts. This stops the open HTTP stream and the SDK's CPU-heavy reader thread (F16) without touching `MightyPose` or the templates. The pose reader's idle timing writer thread, its log file and its now-inert callbacks remain until the process exits; removing those too (option 2: `MightyPose` creating them in `update()`) was not chosen. Ed: "yes, add option 1 as a commit". | Ed | Decided |
 | D11 | 2026-11-14 | All work goes on `mighty-camera-image`, branched from `zlite/mighty-camera-gps`. It ends with a PR into `zlite/mighty-camera-gps` for Chris to review and merge. `c740dab4` moved onto this branch, and the local `zlite/mighty-camera-gps` was reset to match origin (`a0c3b63e`). | Ed | Decided |
 
 ## Findings
@@ -91,7 +92,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F27 | 2026-11-15 | In runbook step 6 (`path_follow`, 640×400, depth 1, `CAMERA_FRAMERATE = 12`, `HAVE_MIGHTY` starting VIO, and the web UI's `/video` stream being read), the camera stopped sending images for over 1 s once. Its rate then fell to 10.5 fps, recovered to 13.4, and fell to 8.7 fps. The startup check had measured 14.4 fps. The runtime warnings fired once each as designed, and the drive kept running. The cause is not isolated: VIO starting (the camera resets, F10), encoding the 640×400 web stream on the Pi, or the SDK's CPU use (F16) are all candidates. A `CAMERA_FRAMERATE` that passes at startup can therefore still be too high once VIO runs. The docs now say so. | Runbook step 6 on murmurpi64 |
 | F28 | 2026-11-15 | Plugged into the Pi over USB, the Mighty is a wired Ethernet device whose DHCP offers a default route and DNS. NetworkManager prefers it to WiFi, so the car drops off WiFi (Ed's report). On murmurpi64 (Debian 13), its connection is named `netplan-eth0` (TYPE `ethernet`, DEVICE `usb0`), not Ed's example "Wired connection 2". So the docs find the connection by TYPE and DEVICE, not by name. That Pi already had `ipv4.never-default` and `ipv4.ignore-auto-dns` set to `yes` (the IPv6 pair `no`), and its only default route was via `wlan0`. | Ed; read-only `nmcli` and `ip route` on murmurpi64 |
 | F29 | 2026-11-17 | **PR #1255's CI failed** on macOS and Ubuntu: `test_scripts.py::test_drivesim` failed with `OSError: Address already in use` (267 passed). Two template tests ran a real `complete.drive()` / `cv_control.drive()` in the pytest process, which starts `LocalWebController` on `WEB_CONTROL_PORT` 8887 in a thread that is never stopped. `test_mighty_templates.py` runs before `test_scripts.py`, so the port was still held when `test_drivesim`'s `donkey` subprocess tried to bind it. The older in-process drive test is in `test_template.py`, which runs after it, so it never collided. On the Mac `.venv`, `test_drivesim` is skipped (no TensorFlow), which hid the failure. Reproduced with a probe test binding 8887 after the template tests. Fixed in commit 17 (`WEB_CONTROL_PORT = 0` in the template tests' configs). | `gh pr checks 1255`, CI logs, local CI-equivalent run |
-| F30 | 2026-11-17 | **Open (D21): a failed camera start leaks the pose reader.** Found by Ed's review. In `path_follow` with `HAVE_MIGHTY`, `add_mighty` adds `MightyPose` (a link share, SDK callbacks, a timing writer thread) before `add_camera`, and `MightyCamera` connects the shared link in its constructor. When the camera then raises (size, depth or frame-rate check), it releases only its own share. The connection stays open under the pose reader's share, with the reader's callbacks and writer thread alive, and because the exception escapes before `Vehicle.start()`, no part's `shutdown()` runs. A process that exits on the error loses nothing, but code that catches it (tests, a supervisor) keeps them. A fix with tests exists on `claude/path-follow-construction-cleanup`; those tests failed against the current template. | Ed's review of `parts/mighty.py`; tests on the deferred branch |
+| F30 | 2026-11-17 | **Partly fixed (D22); the rest deferred (D21): a failed camera start leaks the pose reader.** Found by Ed's review. In `path_follow` with `HAVE_MIGHTY`, `add_mighty` adds `MightyPose` (a link share, SDK callbacks, a timing writer thread) before `add_camera`, and `MightyCamera` connects the shared link in its constructor. When the camera then raises (size, depth or frame-rate check), it releases only its own share. The connection stays open under the pose reader's share, with the reader's callbacks and writer thread alive, and because the exception escapes before `Vehicle.start()`, no part's `shutdown()` runs. A process that exits on the error loses nothing, but code that catches it (tests, a supervisor) keeps them. A fix with tests exists on `claude/path-follow-construction-cleanup`; those tests failed against the current template. | Ed's review of `parts/mighty.py`; tests on the deferred branch **2026-11-17:** commit 18 (D22) makes the camera close the stream it opened. Only the pose reader's idle writer thread, log file and inert callbacks remain. |
 
 ## Design
 
@@ -675,6 +676,43 @@ tests.
     (44179374322) and the push run (44179361363). Before this commit both
     had failed on `test_drivesim`.
   - *Car, 2026-11-17, at `c7701fb9`:* 122 tests passed (see commit 16).
+- [ ] **18. A failed camera start closes the stream it opened (D22, F30).**
+  - `MightyLink.connect()` now returns whether it opened the stream, and the
+    new `MightyLink.close_stream()` closes it while keeping the link and its
+    users.
+  - On a startup failure, `MightyCamera` calls `close_stream()` when it opened
+    the stream and another part still shares the link, then releases its
+    own share.
+  - Tests:
+    - `test_mighty.py`: `connect()` reports opening; `close_stream()` keeps
+      the users, does nothing a second time, and the next `connect()`
+      reopens.
+    - `test_mighty_camera.py`: a failed start closes a stream it opened for
+      a sharing part, and leaves a stream it did not open.
+    - `test_path_follow_mighty.py`: with `HAVE_MIGHTY` and a camera failing
+      its size check, the stream is closed once, the pose reader keeps its
+      share, and it can reopen.
+  - *Verify:* the new tests fail against the old `mighty.py` and pass with
+    the fix.
+  - *Verify:* the full CI-equivalent suite and the car tests pass.
+  - *Verify:* on the car, no camera connection or SDK reader thread survives
+    a failed camera start while a pose share is held.
+  - *Verify:* PR #1255's CI passes.
+  - *Mac, 2026-11-17:*
+    - The camera, link and `path_follow` tests passed (91 passed).
+    - With `mighty.py` stashed to origin's version, the 4 new
+      fixed-behaviour tests failed; the "did not open" test passed, as
+      intended.
+    - `mypy` is clean.
+    - CI-equivalent suite: 287 passed, 28 skipped, 1 xpassed, 0 failed.
+  - *SDK check on murmurpi64:* one `MightyClient` reconnected after
+    `disconnect()` (38 then 39 images in 2 s), and received no images while
+    disconnected.
+  - *Car pre-check, 2026-11-17 (before commit, `/tmp` copy):* with a link
+    share held as the pose reader would hold it, a `MightyCamera` failing
+    its size check left 0 TCP connections to the camera and 0
+    `MightyClientLoop` threads. The share then reopened the stream (1
+    connection, 1 thread), and releasing it returned both to 0.
 
 ## Not in this plan
 
@@ -687,5 +725,6 @@ tests.
 - The `basic` template (D19).
 - Shutting down already-built `path_follow` parts when construction fails
   (F30, D21). Deferred to a later PR; the work is on the local branch
-  `claude/path-follow-construction-cleanup`.
+  `claude/path-follow-construction-cleanup`. Commit 18 (D22) already closes
+  the stream itself.
 - Editing any car directory (`~/mycar*`). Ed makes those config changes.

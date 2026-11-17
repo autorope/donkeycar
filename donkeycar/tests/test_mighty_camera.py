@@ -213,6 +213,31 @@ class CameraTests(unittest.TestCase):
         self.clients[0].unsubscribe_image.assert_called_once()
         self.clients[0].disconnect.assert_called_once()
 
+    def test_failed_start_closes_a_stream_it_opened_for_a_sharing_part(self):
+        # Plan F30: the pose reader shares the link but has not connected yet
+        # (it does that when the vehicle starts). A failed camera start must
+        # not leave the stream it opened running for it.
+        pose_share = MightyLink.acquire(URL)
+        with self.assertRaises(CameraError):
+            MightyCamera(URL, image_w=160, image_h=120, warmup_secs=1.0)  # not 16:10
+        client = self.clients[0]
+        client.disconnect.assert_called_once()
+        self.assertFalse(pose_share.connected)
+        self.assertEqual(pose_share.users, 1)
+        self.assertTrue(pose_share.connect())  # the pose reader reopens it on start
+        self.assertEqual(client.connect.call_count, 2)
+        pose_share.release()
+
+    def test_failed_start_leaves_a_stream_it_did_not_open(self):
+        running = MightyLink.acquire(URL)
+        running.connect()
+        with self.assertRaises(CameraError):
+            MightyCamera(URL, image_w=160, image_h=120, warmup_secs=1.0)
+        self.clients[0].disconnect.assert_not_called()
+        self.assertTrue(running.connected)
+        self.assertEqual(running.users, 1)
+        running.release()
+
     def test_warmup_timeout_fails_and_releases(self):
         self.initial = []
         with self.assertRaisesRegex(CameraError, 'no image from http://192.168.7.1 within 0.05 s'):

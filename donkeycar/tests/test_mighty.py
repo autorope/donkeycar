@@ -184,6 +184,29 @@ class LinkTests(unittest.TestCase):
         a.client.disconnect.assert_called_once()
         self.assertEqual(MightyLink._links, {})
 
+    def test_connect_reports_whether_it_opened_the_stream(self):
+        link = MightyLink.acquire(self.URL)
+        self.assertTrue(link.connect())
+        self.assertFalse(link.connect())
+        link.client.connect.assert_called_once()
+        link.release()
+
+    def test_close_stream_keeps_users_and_the_next_connect_reopens(self):
+        a = MightyLink.acquire(self.URL)
+        b = MightyLink.acquire(self.URL)
+        a.connect()
+        a.close_stream()
+        a.client.disconnect.assert_called_once()
+        self.assertFalse(a.connected)
+        self.assertEqual(a.users, 2)
+        self.assertIs(MightyLink._links[self.URL], a)
+        a.close_stream()  # already closed: nothing more
+        a.client.disconnect.assert_called_once()
+        self.assertTrue(b.connect())
+        self.assertEqual(a.client.connect.call_count, 2)
+        a.release()
+        b.release()
+
     def test_link_after_last_release_is_new(self):
         self.sdk.MightyClient.side_effect = lambda *args, **kwargs: MagicMock()
         first = MightyLink.acquire(self.URL)

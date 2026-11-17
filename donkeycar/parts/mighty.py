@@ -81,12 +81,25 @@ class MightyLink:
             link.users += 1
             return link
 
-    def connect(self) -> None:
-        """Open the stream unless another user already has."""
+    def connect(self) -> bool:
+        """Open the stream unless another user already has; True if this call opened it."""
         with self.lock:
-            if not self.connected:
-                self.client.connect()
-                self.connected = True
+            if self.connected:
+                return False
+            self.client.connect()
+            self.connected = True
+            return True
+
+    def close_stream(self) -> None:
+        """Close the stream but keep the link and its users.
+
+        For a user that opened the stream and then failed to start (plan F30):
+        it leaves the link as it found it, and the next connect() reopens it.
+        """
+        with self.lock:
+            if self.connected:
+                self.connected = False
+                self.client.disconnect()
 
     def release(self) -> None:
         """Drop one user; the last one disconnects and forgets the link."""
@@ -517,8 +530,9 @@ class MightyCamera:
         self.link = MightyLink.acquire(url, read_chunk_size)
         self.client = self.link.client
         self.unsubscribers: list[Callable[[], None]] = [self.client.on_image(self.on_image)]
+        opened_stream = False
         try:
-            self.link.connect()
+            opened_stream = self.link.connect()
             if not self.new_frame.wait(warmup_secs):
                 raise CameraError(
                     f'MightyCamera received no image from {url} within {warmup_secs:g} s. '
@@ -549,6 +563,13 @@ class MightyCamera:
             if not self.poll():
                 raise CameraError(f'MightyCamera could not decode its first image from {url}')
         except BaseException:
+            # Leave the link as it was found (plan F30). If this camera opened
+            # the stream and another part (the pose reader) still shares the
+            # link, release() alone would leave the stream and the SDK's
+            # reader thread running for a vehicle that never starts. That
+            # part reopens the stream itself in update() if it does start.
+            if opened_stream and self.link.users > 1:
+                self.link.close_stream()
             self.release()
             raise
         logger.info('MightyCamera ready: %dx%d depth %d from %dx%d %s frames%s',
