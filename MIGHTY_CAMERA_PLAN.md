@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 11 / 15 commits verified**
+**Progress: 12 / 15 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -574,7 +574,7 @@ Each box is ticked only after the checks listed under it pass (D2).
       the IPv6 pair was `no`.
     - The only default route was via `wlan0`, and the camera answered `200`
       (F28).
-- [ ] **15. `CAMERA_FRAMERATE` becomes a minimum (D20).**
+- [x] **15. `CAMERA_FRAMERATE` becomes a minimum (D20).**
   - `parts/mighty.py`: the pacing is removed (`DUE_FRACTION`,
     `seconds_until_due`, `last_published`, and the wait in `update()`). The
     class and `framerate_error` docstrings, the startup log line and the
@@ -603,6 +603,26 @@ Each box is ticked only after the checks listed under it pass (D2).
     - `--framerate 5` received 20.0 fps and published 20.2.
     - Before this change the same command capped publishing near 12 (12.3
       published from 13.5 received, 2026-11-15).
+  - *Verified 2026-11-17 on murmurpi64 at `3264db91`* (commit 15 as rebased
+    onto Ed's two commits below):
+    - The car was up to date with origin.
+    - The Mighty, template and look-ahead tests passed: 118 passed.
+    - `snapshot --framerate 12` logged "camera at 20.1 fps, CAMERA_FRAMERATE
+      minimum 12 fps", received 20.2 fps and published 20.2 distinct images
+      per second.
+
+Ed's own commits on the branch, outside this checklist (pushed 2026-11-17,
+before commit 15):
+
+- `6f89eaf7` *Add exception handling for MightyTiming instantiation.* If
+  `MightyTiming(log_directory)` raises, `MightyPose.__init__` releases its
+  `MightyLink` share before re-raising, so the connection isn't leaked.
+- `9d2c2c57` *Allow controller check for DONKEY_GYM configuration.*
+  `cv_control.colour_camera_error` returns None when `DONKEY_GYM` is set: the
+  simulator supplies colour images whatever `CAMERA_TYPE` says.
+
+Both are covered by the 118 passing car tests, but neither has a test of its
+own yet.
 
 ## Not in this plan
 
