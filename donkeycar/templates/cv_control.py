@@ -48,7 +48,7 @@ def colour_camera_error(cfg):
     """
     controller = (getattr(cfg, "CV_CONTROLLER_MODULE", LINE_FOLLOWER[0]),
                   getattr(cfg, "CV_CONTROLLER_CLASS", LINE_FOLLOWER[1]))
-    if controller != LINE_FOLLOWER:
+    if controller != LINE_FOLLOWER or getattr(cfg, "DONKEY_GYM", False):
         return None
     reason = ("its autopilot, donkeycar.parts.line_follower.LineFollower, finds the line "
               "by colour (COLOR_THRESHOLD_LOW/HIGH)")
