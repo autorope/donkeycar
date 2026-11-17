@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 12 / 17 commits verified**
+**Progress: 13 / 17 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -625,7 +625,7 @@ before commit 15):
 Both are covered by the 118 passing car tests; commit 16 gives each its own
 tests.
 
-- [ ] **16. Tests for Ed's `6f89eaf7` and `9d2c2c57`.** Ed: "add tests for
+- [x] **16. Tests for Ed's `6f89eaf7` and `9d2c2c57`.** Ed: "add tests for
   those two commits".
   - `test_mighty.py`:
     - `MightyTiming` raising `PermissionError` makes `MightyPose` re-raise,
@@ -647,6 +647,9 @@ tests.
     - Afterwards `parts/` and `templates/` were checked as identical to
       `HEAD`.
     - The full suite gives 237 passed, plus the F9 failure.
+  - *Verified 2026-11-17 on murmurpi64 at `c7701fb9`:* the car was up to date
+    with origin. The Mighty, template and look-ahead tests passed (122
+    passed), including the 4 new tests.
 - [ ] **17. Stop the template tests holding port 8887 (F29).**
   `test_mighty_templates.py`'s `car_config` now writes `WEB_CONTROL_PORT = 0`
   unless a test sets it, so in-process `drive()` runs bind any free port.
