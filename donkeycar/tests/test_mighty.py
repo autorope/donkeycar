@@ -245,6 +245,25 @@ class LinkTests(unittest.TestCase):
         readers[1].shutdown()
         client.disconnect.assert_called_once()
 
+    def test_timing_failure_releases_the_link(self):
+        # Ed's 6f89eaf7: if MightyTiming cannot start (say the log directory
+        # cannot be created), the reader must not keep its link share.
+        with patch('donkeycar.parts.mighty.MightyTiming',
+                   side_effect=PermissionError('logs: read-only')):
+            with self.assertRaisesRegex(PermissionError, 'read-only'):
+                MightyPose(log_directory=self.temp.name)
+        self.assertEqual(MightyLink._links, {})
+        self.sdk.MightyClient.return_value.disconnect.assert_called_once()
+
+    def test_timing_failure_leaves_other_users_connected(self):
+        other = MightyLink.acquire(self.URL)
+        with patch('donkeycar.parts.mighty.MightyTiming', side_effect=OSError('disk full')):
+            with self.assertRaises(OSError):
+                MightyPose(log_directory=self.temp.name)
+        self.assertEqual(other.users, 1)
+        other.client.disconnect.assert_not_called()
+        other.release()
+
     def test_update_exit_releases_its_share(self):
         reader = MightyPose(log_directory=self.temp.name, start_vio=False)
         self.addCleanup(reader.shutdown)

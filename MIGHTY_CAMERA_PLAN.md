@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 12 / 15 commits verified**
+**Progress: 12 / 16 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -621,8 +621,31 @@ before commit 15):
   `cv_control.colour_camera_error` returns None when `DONKEY_GYM` is set: the
   simulator supplies colour images whatever `CAMERA_TYPE` says.
 
-Both are covered by the 118 passing car tests, but neither has a test of its
-own yet.
+Both are covered by the 118 passing car tests; commit 16 gives each its own
+tests.
+
+- [ ] **16. Tests for Ed's `6f89eaf7` and `9d2c2c57`.** Ed: "add tests for
+  those two commits".
+  - `test_mighty.py`:
+    - `MightyTiming` raising `PermissionError` makes `MightyPose` re-raise,
+      leaves the link registry empty, and disconnects once;
+    - when another user holds the link, a `MightyTiming` failure leaves it
+      connected with 1 user.
+  - `test_mighty_templates.py`:
+    - with `DONKEY_GYM = True`, `colour_camera_error` returns None for
+      `MIGHTY` and for `IMAGE_DEPTH = 1`, and `drive()` gets past the check;
+    - without `DONKEY_GYM`, `MIGHTY` is still refused.
+  - *Verify:* the new tests fail with the two fixes reverse-applied, and pass
+    with them, on the Mac.
+  - *Verify:* the tests pass on the car.
+  - *Mac, 2026-11-17:*
+    - With the fixes: the 4 new tests passed.
+    - With both commits reverse-applied to the working tree: the two
+      `MightyTiming` tests and both simulator cases failed, and the
+      still-refused test passed, as it should.
+    - Afterwards `parts/` and `templates/` were checked as identical to
+      `HEAD`.
+    - The full suite gives 237 passed, plus the F9 failure.
 
 ## Not in this plan
 

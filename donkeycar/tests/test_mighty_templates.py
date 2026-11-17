@@ -212,6 +212,24 @@ class CvControlTemplateTests(MightyTemplateCase):
         cfg = self.config(CAMERA_TYPE='MOCK', IMAGE_DEPTH=3)
         self.assertIsNone(cv_control.colour_camera_error(cfg))
 
+    def test_simulator_skips_the_colour_check(self):
+        # Ed's 9d2c2c57: with DONKEY_GYM the simulator supplies colour images,
+        # whatever CAMERA_TYPE or IMAGE_DEPTH say.
+        for settings in [dict(CAMERA_TYPE='MIGHTY'), dict(CAMERA_TYPE='MOCK', IMAGE_DEPTH=1)]:
+            with self.subTest(**settings):
+                cfg = self.config(DONKEY_GYM=True, **settings)
+                self.assertIsNone(cv_control.colour_camera_error(cfg))
+                # drive() gets past the check and on to building the vehicle.
+                with patch.object(cv_control.dk.vehicle, 'Vehicle',
+                                  side_effect=RuntimeError('past the colour check')):
+                    with self.assertRaisesRegex(RuntimeError, 'past the colour check'):
+                        cv_control.drive(cfg)
+        self.sdk.MightyClient.assert_not_called()
+
+    def test_without_the_simulator_mighty_is_still_refused(self):
+        cfg = self.config(DONKEY_GYM=False)
+        self.assertIn('monochrome camera', cv_control.colour_camera_error(cfg))
+
     def test_custom_controller_runs_with_the_mighty_camera(self):
         cfg = self.config(USE_SSD1306_128_32=False, DRIVE_TRAIN_TYPE='None',
                           CV_CONTROLLER_MODULE='donkeycar.tests.test_mighty_templates',
