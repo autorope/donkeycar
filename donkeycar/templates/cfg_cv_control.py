@@ -30,7 +30,7 @@ MAX_LOOPS = None        # the vehicle loop can abort after this many iterations,
 #
 # CAMERA configuration
 #
-CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
+CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MIGHTY|MOCK|IMAGE_LIST); MIGHTY: see below
 IMAGE_W = 320
 IMAGE_H = 240
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
@@ -44,6 +44,23 @@ BGR2RGB = False  # true to convert from BRG format to RGB format; requires openc
 
 # For IMAGE_LIST camera
 PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
+
+# For MIGHTY camera (the Mighty VIO camera over USB Ethernet); see docs/mighty.md.
+# Its frames are 640x400 MONO. The default LineFollower finds the line by HSV
+# colour (COLOR_THRESHOLD_* below, saturation >= 50), which grey images never
+# match, so cv_control refuses to start with MIGHTY (or IMAGE_DEPTH = 1) unless
+# CV_CONTROLLER_MODULE/CLASS name a controller that works on greyscale.
+# IMAGE_W x IMAGE_H must be 16:10 and no larger, e.g. 320x200 instead of the
+# default 320x240, or startup fails with the closest sizes; SCAN_Y and
+# TARGET_PIXEL are in pixels of that image. IMAGE_DEPTH must be 1, since the
+# camera is monochrome. The camera sets its own frame rate (about 18 fps,
+# 12-15 while VIO runs). CAMERA_FRAMERATE (DRIVE_LOOP_HZ by default) is a
+# minimum, not a cap: startup fails if the camera cannot reach it, naming the
+# rate to use.
+MIGHTY_URL = 'http://192.168.7.1'   # the camera's USB Ethernet address
+MIGHTY_CAMERA_WARMUP_SECS = 5.0     # fail at startup if no image arrives by then
+MIGHTY_CAMERA_FPS_CHECK_SECS = 2.0  # how long startup measures the frame rate
+MIGHTY_READ_CHUNK_BYTES = 1024      # SDK stream read size; 65536 (the SDK default) bunches frames 3 at a time
 
 
 #

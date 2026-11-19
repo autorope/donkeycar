@@ -31,7 +31,7 @@ MAX_LOOPS = None        # the vehicle loop can abort after this many iterations,
 #
 # CAMERA configuration
 #
-CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
+CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MIGHTY|MOCK|IMAGE_LIST); MIGHTY: see the Mighty settings below
 IMAGE_W = 160
 IMAGE_H = 120
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
@@ -680,3 +680,40 @@ DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DE
 # Intel Realsense T265 tracking camera
 REALSENSE_T265_ID = None # serial number of camera or None if you only have one camera (it will autodetect)
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
+
+
+# MightyCamera is an independent local pose source, like the T265.
+# When enabled it supplies the driving pose; serial GPS may still collect data.
+HAVE_MIGHTY = False
+MIGHTY_URL = 'http://192.168.7.1'
+MIGHTY_START_VIO = True
+MIGHTY_MAX_AGE = 0.5  # seconds since the newest accepted pose arrived
+MIGHTY_YAW_DEGREES = 0.0  # rotate local XY and heading, degrees CCW
+MIGHTY_HEADING_OFFSET_DEGREES = 0.0  # body-forward axis: +X=0, +Y=90
+MIGHTY_HIGH_RATE_POSE = False  # request firmware-dependent 60 Hz predicted poses
+MIGHTY_LOG_DIRECTORY = 'logs'
+MIGHTY_READ_CHUNK_BYTES = 1024  # SDK stream read size; 65536 (the SDK default) bunches frames and poses
+
+# The Mighty can also be the image camera: CAMERA_TYPE = "MIGHTY". With
+# HAVE_MIGHTY too, poses and images share one connection. Frames are 640x400
+# mono and are scaled down, never stretched: IMAGE_W x IMAGE_H must be 16:10 and
+# no larger (e.g. 160x100, 320x200), or startup fails with the closest sizes.
+# The camera is monochrome: set IMAGE_DEPTH = 1 (3 is refused).
+# The camera sets its own frame rate (about 18 fps, 12-15 while VIO runs).
+# CAMERA_FRAMERATE (DRIVE_LOOP_HZ by default) is a minimum, not a cap: startup
+# measures the camera and fails if it is lower, naming the rate to use; leave a
+# few fps of margin. Images are published as fast as the camera sends them.
+MIGHTY_CAMERA_WARMUP_SECS = 5.0     # fail at startup if no image arrives by then
+MIGHTY_CAMERA_FPS_CHECK_SECS = 2.0  # how long startup measures the frame rate
+
+# Optional finite-route look-ahead control.
+PATH_CLOSED = True  # False clamps PID segments and stops at a finite route end
+PATH_FINISH_RADIUS = 0.25  # metres
+PATH_USE_LOOKAHEAD = False  # experimental finite-route pure-pursuit controller
+PATH_LOOKAHEAD_METERS = 1.5
+PATH_WHEELBASE_METERS = 0.25  # set to actual axle spacing
+PATH_MAX_STEERING_DEGREES = 30.0  # set to measured full steering angle
+PATH_STEERING_SIGN = -1.0
+PATH_STEERING_GAIN = 0.75
+PATH_MAX_ERROR_METERS = 0.75  # latched stop; manual mode rearms
+PATH_CORNER_MIN_THROTTLE_FACTOR = 0.7
