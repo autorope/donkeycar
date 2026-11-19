@@ -1,13 +1,117 @@
-"""MightyCamera raw body poses and a separate planar pose transform."""
+"""MightyCamera parts: shared SDK link, raw body poses, planar pose transform and images."""
+from __future__ import annotations
+
+import argparse
+from collections import deque
 from copy import deepcopy
+from io import BytesIO
 import logging
 import math
+import sys
 import threading
 import time
+from typing import Any, Callable, ClassVar, Optional, Sequence
 
+import numpy as np
+from PIL import Image
+
+from donkeycar.parts.camera import CameraError
 from donkeycar.parts.mighty_timing import MightyTiming
 
 logger = logging.getLogger(__name__)
+
+SDK_INSTALL_HINT = ('Mighty requires the SDK: python -m pip install '
+                    'git+https://github.com/asadm/mighty-protocol.git')
+
+# The SDK's HTTP reader waits for a full read_chunk_size block (64 KiB by
+# default) before parsing, so ~19 KB frames arrive three at a time about every
+# 200 ms and poses bunch up with them. Small reads deliver each frame and pose
+# as it arrives, at no measurable CPU cost (plan F15, D15).
+READ_CHUNK_BYTES = 1024
+
+
+class MightyLink:
+    """One shared, reference-counted SDK connection per camera URL.
+
+    The pose reader and the image camera each ``acquire`` the link for their
+    URL and register their own callbacks on ``client``. The camera streams
+    poses and images over a single HTTP connection, and two connections each
+    run at a reduced frame rate, so every part for one URL shares this one.
+    The first ``connect`` opens the stream; the last ``release`` closes it and
+    forgets the link, so a later ``acquire`` starts a fresh connection.
+    The stream is read ``read_chunk_size`` bytes at a time; the first user's
+    size is used, and a later user asking for another one is warned.
+    """
+    _links: ClassVar[dict[str, MightyLink]] = {}
+    _registry_lock: ClassVar[threading.Lock] = threading.Lock()
+
+    def __init__(self, url: str, client: Any, read_chunk_size: int) -> None:
+        self.url = url
+        self.client = client
+        self.read_chunk_size = read_chunk_size
+        self.users = 0
+        self.connected = False
+        self.lock = threading.Lock()
+
+    @staticmethod
+    def key(url: str) -> str:
+        return url.strip().rstrip('/')
+
+    @classmethod
+    def acquire(cls, url: str, read_chunk_size: int = READ_CHUNK_BYTES) -> MightyLink:
+        """Return the link for ``url``, creating its client on first use."""
+        if isinstance(read_chunk_size, bool) or not isinstance(read_chunk_size, int) \
+                or read_chunk_size < 1:
+            raise ValueError('Mighty read_chunk_size (MIGHTY_READ_CHUNK_BYTES) must be '
+                             'a positive whole number of bytes')
+        key = cls.key(url)
+        with cls._registry_lock:
+            link = cls._links.get(key)
+            if link is None:
+                try:
+                    from mighty_sdk import MightyClient, MightyWebDevice
+                except ImportError as exc:
+                    raise ImportError(SDK_INSTALL_HINT) from exc
+                device = MightyWebDevice(base_url=key, read_chunk_size=read_chunk_size)
+                client = MightyClient(device, auto_reconnect=True)
+                link = cls._links[key] = cls(key, client, read_chunk_size)
+            elif link.read_chunk_size != read_chunk_size:
+                logger.warning('Mighty %s is already open with read_chunk_size %d; '
+                               'ignoring %d', key, link.read_chunk_size, read_chunk_size)
+            link.users += 1
+            return link
+
+    def connect(self) -> bool:
+        """Open the stream unless another user already has; True if this call opened it."""
+        with self.lock:
+            if self.connected:
+                return False
+            self.client.connect()
+            self.connected = True
+            return True
+
+    def close_stream(self) -> None:
+        """Close the stream but keep the link and its users.
+
+        For a user that opened the stream and then failed to start (plan F30):
+        it leaves the link as it found it, and the next connect() reopens it.
+        """
+        with self.lock:
+            if self.connected:
+                self.connected = False
+                self.client.disconnect()
+
+    def release(self) -> None:
+        """Drop one user; the last one disconnects and forgets the link."""
+        with MightyLink._registry_lock:
+            self.users -= 1
+            if self.users > 0:
+                return
+            if MightyLink._links.get(self.url) is self:
+                del MightyLink._links[self.url]
+        with self.lock:
+            self.connected = False
+            self.client.disconnect()
 
 
 class MightyPose:
@@ -18,32 +122,35 @@ class MightyPose:
     happens here. A fresh sample also requires a connected, tracking camera.
     """
     def __init__(self, url='http://192.168.7.1', start_vio=True,
-                 max_age=0.5, high_rate_pose=False, log_directory='logs'):
+                 max_age=0.5, high_rate_pose=False, log_directory='logs',
+                 read_chunk_size: int = READ_CHUNK_BYTES):
         if not math.isfinite(max_age) or max_age <= 0:
             raise ValueError('Mighty max_age must be finite and positive')
+        self.link = MightyLink.acquire(url, read_chunk_size)
+        self.client = self.link.client
+        self.released = False
         try:
-            from mighty_sdk import MightyClient, MightyWebDevice
-        except ImportError as exc:
-            raise ImportError(
-                'Mighty requires the SDK: python -m pip install '
-                'git+https://github.com/asadm/mighty-protocol.git'
-            ) from exc
-        self.client = MightyClient(MightyWebDevice(base_url=url), auto_reconnect=True)
-        self.timing = MightyTiming(log_directory)
+            self.timing = MightyTiming(log_directory)
+        except BaseException:
+            self.link.release()
+            raise
         self.pose_lock = threading.Lock()
-        self.latest = None
-        self.received_at = None
-        self.state = None
+        self.latest: Optional[dict[str, Any]] = None
+        self.received_at: Optional[float] = None
+        self.state: Optional[int] = None
         self.max_age = max_age
         self.start_vio = start_vio
         self.high_rate_pose = high_rate_pose
         self.stop = threading.Event()
-        self.last_valid = None
+        self.last_valid: Optional[bool] = None
         self.last_stats = 0.0
-        self.client.on_pose(self.on_pose)
-        self.client.on_vio_state(self.on_state)
-        self.client.on_reset(self.on_reset)
-        self.client.on_error(lambda error: logger.warning('Mighty: %s', error))
+        # Keep the unsubscribers: the client may outlive this part when shared.
+        self.unsubscribers: list[Callable[[], None]] = [
+            self.client.on_pose(self.on_pose),
+            self.client.on_vio_state(self.on_state),
+            self.client.on_reset(self.on_reset),
+            self.client.on_error(lambda error: logger.warning('Mighty: %s', error)),
+        ]
 
     def on_pose(self, pose):
         if not isinstance(pose, dict):
@@ -74,7 +181,7 @@ class MightyPose:
 
     def update(self):
         try:
-            self.client.connect()
+            self.link.connect()
             result = self.client.command('high_rate_imu', b'on' if self.high_rate_pose else b'status')
             self.timing.record('high_rate_pose', requested=self.high_rate_pose, result=result)
             logger.info('Mighty high-rate pose (requested=%s): %s', self.high_rate_pose, result)
@@ -85,7 +192,7 @@ class MightyPose:
                     logger.error('Start VIO in the Mighty visualizer to obtain a pose')
             self.stop.wait()
         finally:
-            self.client.disconnect()
+            self.release()
 
     def run_threaded(self):
         with self.pose_lock:
@@ -104,10 +211,21 @@ class MightyPose:
             self.last_valid = valid
         return pose, valid, timing
 
+    def release(self) -> None:
+        """Unsubscribe and give up this part's share of the link, once."""
+        with self.pose_lock:
+            if self.released:
+                return
+            self.released = True
+        for unsubscribe in self.unsubscribers:
+            if callable(unsubscribe):
+                unsubscribe()
+        self.link.release()
+
     def shutdown(self):
         self.stop.set()
         try:
-            self.client.disconnect()
+            self.release()
         finally:
             self.timing.close()
 
@@ -166,3 +284,490 @@ class PoseDriveGate:
         if mode != 'user' and not valid:
             return 0.0, 0.0
         return steering, throttle
+
+
+# Raw pixel formats from mighty_protocol.RAW_FORMAT that MightyCamera accepts.
+RAW_GRAY8, RAW_RGB24, RAW_BGR24 = 1, 2, 3
+ASPECT_NAMES = {(8, 5): '16:10'}
+
+Size = tuple[int, int]
+
+
+def aspect(width: int, height: int) -> Size:
+    """Reduce a frame size to its smallest whole-number aspect ratio."""
+    divisor = math.gcd(width, height)
+    return width // divisor, height // divisor
+
+
+def aspect_name(width: int, height: int) -> str:
+    ratio = aspect(width, height)
+    return ASPECT_NAMES.get(ratio, f'{ratio[0]}:{ratio[1]}')
+
+
+def size_fits(width: int, height: int, native: Size) -> bool:
+    """True when width x height is the camera's shape, no larger than its frames."""
+    native_w, native_h = native
+    return (0 < width <= native_w and 0 < height <= native_h
+            and width * native_h == height * native_w)
+
+
+def suggest_image_sizes(width: int, height: int, native: Size) -> list[tuple[Size, str]]:
+    """Sizes to offer when width x height cannot be returned (plan D12).
+
+    One candidate is the largest valid size whose width fits IMAGE_W, the other
+    the largest whose height fits IMAGE_H, both capped at the frame size. The
+    suggestion is the candidate with more pixels (the width one on a tie), or
+    the smallest valid size when neither dimension admits one. The full frame
+    is always offered too, unless it is already the suggestion.
+    """
+    native_w, native_h = native
+    step_w, step_h = aspect(native_w, native_h)
+    most = native_w // step_w
+    candidates: list[tuple[Size, str]] = []
+    k = min(width // step_w, most)
+    if k >= 1:
+        exact = k * step_w == width
+        candidates.append(((k * step_w, k * step_h),
+                           'keeps your width' if exact else 'the largest that fits your width'))
+    k = min(height // step_h, most)
+    if k >= 1:
+        exact = k * step_h == height
+        candidates.append(((k * step_w, k * step_h),
+                           'keeps your height' if exact else 'the largest that fits your height'))
+    if not candidates:
+        candidates.append(((step_w, step_h), 'the smallest size'))
+    best = max(candidates, key=lambda c: c[0][0] * c[0][1])
+    if best[0] == native:
+        return [(native, 'the full frame')]
+    return [best, (native, 'the full frame')]
+
+
+def image_size_error(width: int, height: int, native: Size) -> Optional[str]:
+    """None if the camera can return width x height, else the myconfig.py fix."""
+    if size_fits(width, height, native):
+        return None
+    native_w, native_h = native
+    if width <= 0 or height <= 0:
+        why = 'because it is not a positive size'
+    elif width * native_h != height * native_w:
+        why = 'without stretching'
+    else:
+        why = "because it is larger than the camera's frames"
+    ratio = aspect_name(native_w, native_h)
+    fixes = ', or '.join(f'IMAGE_W = {w} and IMAGE_H = {h} ({reason})'
+                         for (w, h), reason in suggest_image_sizes(width, height, native))
+    return (f'MightyCamera cannot return IMAGE_W={width}, IMAGE_H={height} {why}: '
+            f'the camera sends {native_w}x{native_h} ({ratio}). '
+            f'In myconfig.py set {fixes}. '
+            f'Any {ratio} size up to {native_w}x{native_h} works.')
+
+
+FRAMERATE_TOLERANCE = 0.05  # measurement noise and camera jitter, as a fraction
+
+
+def supported_framerate(measured: float) -> int:
+    """The largest whole CAMERA_FRAMERATE the camera keeps up with (plan D14)."""
+    return math.floor(measured * (1 + FRAMERATE_TOLERANCE) + 1e-9)
+
+
+def framerate_error(requested: float, measured: float) -> Optional[str]:
+    """None if the camera keeps up with CAMERA_FRAMERATE, else the fix (plan D14).
+
+    CAMERA_FRAMERATE is the minimum rate the car needs (plan D20). The camera
+    sets its own rate, so CAMERA_FRAMERATE may be at most the measured rate
+    plus FRAMERATE_TOLERANCE; the fix names the largest whole rate within that.
+    """
+    if requested <= measured * (1 + FRAMERATE_TOLERANCE) + 1e-9:
+        return None
+    supported = supported_framerate(measured)
+    if supported < 1:
+        return (f'MightyCamera is sending only {measured:.1f} fps, too slow for '
+                f'CAMERA_FRAMERATE = {requested:g}. Check the camera connection; '
+                f'images should arrive at about 15-18 fps.')
+    return (f'MightyCamera cannot deliver CAMERA_FRAMERATE = {requested:g}: the camera is '
+            f'sending {measured:.1f} fps. The camera sets its own rate, and it drops to '
+            f'about 15 fps while VIO runs. In myconfig.py set '
+            f'CAMERA_FRAMERATE = {supported}, or anything lower.')
+
+
+MONO_TOLERANCE = 2  # grey levels JPEG rounding may leave between equal channels
+
+
+def is_monochrome(picture: Image.Image) -> bool:
+    """True when a frame carries no colour (plan D16).
+
+    Greyscale modes are monochrome; an RGB frame is monochrome when its three
+    channels agree to within MONO_TOLERANCE everywhere, as the Mighty's JPEGs
+    do (F2). Real colour frames differ by far more.
+    """
+    if picture.mode in ('1', 'L', 'LA', 'I', 'I;16', 'F'):
+        return True
+    rgb = np.asarray(picture.convert('RGB'), dtype=np.int16)
+    return bool(np.abs(rgb[..., 0] - rgb[..., 1]).max() <= MONO_TOLERANCE
+                and np.abs(rgb[..., 1] - rgb[..., 2]).max() <= MONO_TOLERANCE)
+
+
+def image_depth_error(depth: int, monochrome: bool) -> Optional[str]:
+    """None if the camera can give IMAGE_DEPTH, else the fix (plan D16)."""
+    if depth == 3 and monochrome:
+        return ('MightyCamera cannot return IMAGE_DEPTH = 3: the camera is monochrome, '
+                'so there is no colour to return. In myconfig.py set IMAGE_DEPTH = 1.')
+    return None
+
+
+def startup_error(problems: Sequence[str]) -> str:
+    """One message for every configuration problem found at startup (plan D17)."""
+    if len(problems) == 1:
+        return problems[0]
+    numbered = '\n'.join(f'  {n}. {problem}' for n, problem in enumerate(problems, 1))
+    return (f'MightyCamera cannot start: {len(problems)} settings in myconfig.py need '
+            f'changing.\n{numbered}')
+
+
+def primary_image(image: Any) -> Optional[dict[str, Any]]:
+    """The mono/primary member of an SDK image event, as the SDK selects it.
+
+    Dropped frames and loop-closure reference JPEGs are ignored; a stereo pair
+    yields its cam0/preview/left member.
+    """
+    if not isinstance(image, dict) or image.get('dropped'):
+        return None
+    kind = image.get('kind')
+    if kind == 'jpg':
+        return None if image.get('is_reference') else image
+    if kind == 'raw':
+        return image
+    if kind not in ('stereo_raw', 'stereo_jpg'):
+        return None
+    members = [m for m in (image.get('left'), image.get('right')) if isinstance(m, dict)]
+    for member in members:
+        channel = str(member.get('channel_alias') or member.get('channel') or '').strip().lower()
+        if channel in ('cam0', 'preview', 'left'):
+            return member
+    return members[0] if members else None
+
+
+def open_image(image: dict[str, Any]) -> Image.Image:
+    """A PIL image for a jpg or raw (GRAY8/RGB24/BGR24) SDK image.
+
+    JPEGs are opened lazily, so their size is known before any decoding.
+    """
+    kind = image.get('kind')
+    data = bytes(image.get('data') or b'')
+    if kind == 'jpg':
+        if not data:
+            raise ValueError('empty JPEG image')
+        return Image.open(BytesIO(data))
+    if kind != 'raw':
+        raise ValueError(f'unsupported image kind {kind!r}')
+    width, height, fmt = int(image['width']), int(image['height']), image.get('format')
+    if fmt == RAW_GRAY8:
+        return Image.frombytes('L', (width, height), data)
+    if fmt in (RAW_RGB24, RAW_BGR24):
+        rgb = Image.frombytes('RGB', (width, height), data)
+        if fmt == RAW_BGR24:
+            blue, green, red = rgb.split()
+            rgb = Image.merge('RGB', (red, green, blue))
+        return rgb
+    raise ValueError(f'unsupported raw image format {fmt!r}')
+
+
+class MightyCamera:
+    """Image camera part: publishes the Mighty's primary image as cam/image_array.
+
+    The SDK callback only keeps the newest frame; decoding happens in this
+    part's own thread (or in run()), so it never delays pose packets that
+    share the connection. Frames are scaled down without changing their aspect
+    ratio: a size the camera cannot return raises CameraError naming the
+    myconfig.py change that fixes it. image_w/image_h of None mean the full
+    frame. Output is uint8 (H, W) for image_d=1, or RGB (H, W, 3) for 3; a
+    monochrome camera (the Mighty) refuses 3, since it has no colour to give.
+    Size, depth and frame-rate problems are all reported in one CameraError.
+
+    The camera sets its own frame rate. A framerate (CAMERA_FRAMERATE) is the
+    *minimum* rate the car needs, not a cap (plan D20): startup measures the
+    received rate for fps_check_secs and fails if the camera cannot reach it.
+    Every frame is then published as it arrives, however fast. A rate that
+    later falls short (VIO starting, say) logs one advisory warning; the
+    configured minimum is not changed.
+    """
+    RATE_WINDOW_SECS: ClassVar[float] = 5.0
+
+    def __init__(self, url: str = 'http://192.168.7.1',
+                 image_w: Optional[int] = 160, image_h: Optional[int] = 120,
+                 image_d: int = 1, warmup_secs: float = 5.0,
+                 stale_secs: float = 1.0, framerate: Optional[float] = None,
+                 fps_check_secs: float = 2.0,
+                 read_chunk_size: int = READ_CHUNK_BYTES) -> None:
+        if image_d not in (1, 3):
+            raise ValueError('MightyCamera image_d must be 1 (mono) or 3 (RGB)')
+        if not all(math.isfinite(v) and v > 0 for v in (warmup_secs, stale_secs, fps_check_secs)):
+            raise ValueError('MightyCamera warmup_secs, stale_secs and fps_check_secs '
+                             'must be finite and positive')
+        if framerate is not None and not (math.isfinite(framerate) and framerate > 0):
+            raise ValueError('MightyCamera framerate (CAMERA_FRAMERATE) must be finite and positive')
+        self.url = url
+        self.image_d = image_d
+        self.stale_secs = stale_secs
+        self.framerate = framerate
+        self.measured_fps: Optional[float] = None
+        self.rate_window: Optional[float] = None
+        self.warned_rate = False
+        self.lock = threading.Lock()
+        self.new_frame = threading.Event()
+        self.pending: Optional[dict[str, Any]] = None
+        self.received_at: Optional[float] = None
+        self.frames_received = 0
+        self.frames_published = 0
+        # (Pi arrival time, camera capture timestamp_ns or None), newest last.
+        self.arrivals: deque[tuple[float, Optional[int]]] = deque(maxlen=256)
+        self.frame: Optional[np.ndarray] = None
+        self.running = True
+        self.released = False
+        self.warned_stale = False
+        self.warned_size = False
+        self.warned_decode = False
+        self.link = MightyLink.acquire(url, read_chunk_size)
+        self.client = self.link.client
+        self.unsubscribers: list[Callable[[], None]] = [self.client.on_image(self.on_image)]
+        opened_stream = False
+        try:
+            opened_stream = self.link.connect()
+            if not self.new_frame.wait(warmup_secs):
+                raise CameraError(
+                    f'MightyCamera received no image from {url} within {warmup_secs:g} s. '
+                    f'Check the USB cable and that {url} opens in a browser on this machine.')
+            with self.lock:
+                first = self.pending
+            assert first is not None
+            try:
+                picture = open_image(first)
+                self.native: Size = picture.size
+                self.monochrome = is_monochrome(picture)
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                raise CameraError(f'MightyCamera could not decode its first image '
+                                  f'from {url}: {exc}') from exc
+            self.size: Size = (image_w if image_w is not None else self.native[0],
+                               image_h if image_h is not None else self.native[1])
+            # Check everything before failing, so one restart fixes it all (D17).
+            problems = [error for error in (
+                image_size_error(self.size[0], self.size[1], self.native),
+                image_depth_error(image_d, self.monochrome)) if error]
+            if framerate is not None:
+                self.measured_fps = self.measure_fps(fps_check_secs)
+                error = framerate_error(framerate, self.measured_fps)
+                if error:
+                    problems.append(error)
+            if problems:
+                raise CameraError(startup_error(problems))
+            if not self.poll():
+                raise CameraError(f'MightyCamera could not decode its first image from {url}')
+        except BaseException:
+            # Leave the link as it was found (plan F30). If this camera opened
+            # the stream and another part (the pose reader) still shares the
+            # link, release() alone would leave the stream and the SDK's
+            # reader thread running for a vehicle that never starts. That
+            # part reopens the stream itself in update() if it does start.
+            if opened_stream and self.link.users > 1:
+                self.link.close_stream()
+            self.release()
+            raise
+        logger.info('MightyCamera ready: %dx%d depth %d from %dx%d %s frames%s',
+                    self.size[0], self.size[1], image_d, *self.native,
+                    'monochrome' if self.monochrome else 'colour',
+                    '' if framerate is None else
+                    f'; camera at {self.measured_fps:.1f} fps, '
+                    f'CAMERA_FRAMERATE minimum {framerate:g} fps')
+
+    def measure_fps(self, seconds: float) -> float:
+        """Frames per second received over the next `seconds`."""
+        started = time.monotonic()
+        time.sleep(seconds)
+        return self.rate_since(started)
+
+    def rate_since(self, started: float) -> float:
+        """Frame rate of the frames that arrived since `started` (plan D14).
+
+        The SDK hands frames over in bursts, so Pi arrival times say little
+        about the rate (F14). The camera's capture timestamps are used instead:
+        (n - 1) intervals over the first-to-last capture time. Without usable
+        timestamps it falls back to frames counted over the elapsed time.
+        """
+        with self.lock:
+            ended = time.monotonic()
+            frames = [stamp for arrived, stamp in self.arrivals if arrived > started]
+        stamps = [stamp for stamp in frames if stamp is not None]
+        if len(stamps) == len(frames) >= 2 and stamps[-1] > stamps[0]:
+            return (len(stamps) - 1) / ((stamps[-1] - stamps[0]) / 1e9)
+        return len(frames) / (ended - started) if ended > started else 0.0
+
+    def check_rate(self, now: float) -> None:
+        """Every RATE_WINDOW_SECS, warn once if the camera falls below framerate.
+
+        Advisory only: the warning names a rate that would pass, but the
+        configured minimum and publishing are left unchanged.
+        """
+        if self.framerate is None:
+            return
+        if self.rate_window is None:
+            self.rate_window = now
+            return
+        if now - self.rate_window < self.RATE_WINDOW_SECS:
+            return
+        rate = self.rate_since(self.rate_window)
+        self.rate_window = now
+        if framerate_error(self.framerate, rate):
+            if not self.warned_rate:
+                logger.warning('MightyCamera: the camera is now sending %.1f fps, below '
+                               'CAMERA_FRAMERATE = %g, the minimum it started with; images '
+                               'repeat between frames. It drops to about 15 fps while VIO '
+                               'runs. To avoid this, set CAMERA_FRAMERATE = %d or lower in '
+                               'myconfig.py.', rate, self.framerate,
+                               max(1, supported_framerate(rate)))
+                self.warned_rate = True
+        elif self.warned_rate:
+            logger.info('MightyCamera: frame rate back to %.1f fps', rate)
+            self.warned_rate = False
+
+    def on_image(self, image: Any) -> None:
+        """SDK callback: keep only the newest primary frame; no decoding here."""
+        selected = primary_image(image)
+        if selected is None:
+            return
+        with self.lock:
+            self.pending = selected
+            self.received_at = time.monotonic()
+            self.frames_received += 1
+            stamp = selected.get('timestamp_ns')
+            self.arrivals.append((self.received_at,
+                                  stamp if isinstance(stamp, int) and stamp > 0 else None))
+            self.new_frame.set()
+
+    def poll(self) -> bool:
+        """Decode the newest pending frame into self.frame; True if it updated.
+
+        Frames are published as they arrive, never held back to a rate.
+        """
+        now = time.monotonic()
+        self.check_rate(now)
+        with self.lock:
+            image, self.pending = self.pending, None
+            self.new_frame.clear()
+            received_at = self.received_at
+        if image is None:
+            if (received_at is not None and not self.warned_stale
+                    and now - received_at > self.stale_secs):
+                logger.warning('MightyCamera: no new image for over %g s; repeating the last one',
+                               self.stale_secs)
+                self.warned_stale = True
+            return False
+        if self.warned_stale:
+            logger.info('MightyCamera: images resumed')
+            self.warned_stale = False
+        try:
+            picture = open_image(image)
+            if picture.size != self.native:
+                if not self.warned_size:
+                    logger.error('MightyCamera: frames changed from %dx%d to %dx%d; dropping them '
+                                 'rather than stretching. Restart to use the new size.',
+                                 *self.native, *picture.size)
+                    self.warned_size = True
+                return False
+            picture = picture.convert('L' if self.image_d == 1 else 'RGB')
+            if picture.size != self.size:
+                picture = picture.resize(self.size, Image.Resampling.BOX)
+            self.frame = np.asarray(picture, dtype=np.uint8)
+            self.frames_published += 1
+            return True
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            if not self.warned_decode:
+                logger.error('MightyCamera: cannot decode image: %s', exc)
+                self.warned_decode = True
+            return False
+
+    def update(self) -> None:
+        while self.running:
+            self.new_frame.wait(0.1)
+            self.poll()
+
+    def run_threaded(self) -> Optional[np.ndarray]:
+        return self.frame
+
+    def run(self) -> Optional[np.ndarray]:
+        self.poll()
+        return self.frame
+
+    def release(self) -> None:
+        """Unsubscribe and give up this part's share of the link, once."""
+        with self.lock:
+            if self.released:
+                return
+            self.released = True
+        for unsubscribe in self.unsubscribers:
+            if callable(unsubscribe):
+                unsubscribe()
+        self.link.release()
+
+    def shutdown(self) -> None:
+        self.running = False
+        self.release()
+
+
+def snapshot(args: argparse.Namespace) -> int:
+    try:
+        camera = MightyCamera(url=args.url, image_w=args.width, image_h=args.height,
+                              image_d=args.depth, warmup_secs=args.warmup,
+                              framerate=args.framerate, fps_check_secs=args.fps_check,
+                              read_chunk_size=args.chunk)
+    except CameraError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    try:
+        start, published, started = (camera.frames_received, camera.frames_published,
+                                     time.monotonic())
+        thread = threading.Thread(target=camera.update, daemon=True)
+        thread.start()
+        time.sleep(args.seconds)
+        elapsed = time.monotonic() - started
+        fps = (camera.frames_received - start) / elapsed
+        published_fps = (camera.frames_published - published) / elapsed
+        camera.running = False
+        thread.join(1.0)
+        assert camera.frame is not None
+        Image.fromarray(camera.frame).save(args.out)
+        print(f'Camera frames {camera.native[0]}x{camera.native[1]} '
+              f'({aspect_name(*camera.native)}); saved {camera.size[0]}x{camera.size[1]} '
+              f'depth {camera.image_d} to {args.out}; '
+              f'{fps:.1f} fps received, {published_fps:.1f} distinct images published '
+              f'per second over {elapsed:.1f} s')
+        return 0
+    finally:
+        camera.shutdown()
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    parser = argparse.ArgumentParser(prog='python -m donkeycar.parts.mighty',
+                                     description='MightyCamera hardware checks.')
+    commands = parser.add_subparsers(dest='command', required=True)
+    snap = commands.add_parser('snapshot', help='save one frame and report the received frame rate')
+    snap.add_argument('--url', default='http://192.168.7.1')
+    snap.add_argument('--out', default='mighty-snapshot.jpg')
+    snap.add_argument('--seconds', type=float, default=5.0, help='how long to count frames')
+    snap.add_argument('--width', type=int, default=None, help='IMAGE_W to test (default: full frame)')
+    snap.add_argument('--height', type=int, default=None, help='IMAGE_H to test (default: full frame)')
+    snap.add_argument('--depth', type=int, choices=(1, 3), default=1,
+                      help='IMAGE_DEPTH to test; the Mighty is monochrome, so 1')
+    snap.add_argument('--warmup', type=float, default=5.0)
+    snap.add_argument('--framerate', type=float, default=None,
+                      help='CAMERA_FRAMERATE to test (default: no frame-rate check)')
+    snap.add_argument('--chunk', type=int, default=READ_CHUNK_BYTES,
+                      help='SDK stream read size in bytes (MIGHTY_READ_CHUNK_BYTES)')
+    snap.add_argument('--fps-check', type=float, default=2.0,
+                      help='seconds to measure the rate for the --framerate check')
+    args = parser.parse_args(argv)
+    return snapshot(args)
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    sys.exit(main())

@@ -31,7 +31,7 @@ MAX_LOOPS = None        # the vehicle loop can abort after this many iterations,
 #
 # CAMERA configuration
 #
-CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
+CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MIGHTY|MOCK|IMAGE_LIST); MIGHTY: see the Mighty settings below
 IMAGE_W = 160
 IMAGE_H = 120
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
@@ -692,6 +692,19 @@ MIGHTY_YAW_DEGREES = 0.0  # rotate local XY and heading, degrees CCW
 MIGHTY_HEADING_OFFSET_DEGREES = 0.0  # body-forward axis: +X=0, +Y=90
 MIGHTY_HIGH_RATE_POSE = False  # request firmware-dependent 60 Hz predicted poses
 MIGHTY_LOG_DIRECTORY = 'logs'
+MIGHTY_READ_CHUNK_BYTES = 1024  # SDK stream read size; 65536 (the SDK default) bunches frames and poses
+
+# The Mighty can also be the image camera: CAMERA_TYPE = "MIGHTY". With
+# HAVE_MIGHTY too, poses and images share one connection. Frames are 640x400
+# mono and are scaled down, never stretched: IMAGE_W x IMAGE_H must be 16:10 and
+# no larger (e.g. 160x100, 320x200), or startup fails with the closest sizes.
+# The camera is monochrome: set IMAGE_DEPTH = 1 (3 is refused).
+# The camera sets its own frame rate (about 18 fps, 12-15 while VIO runs).
+# CAMERA_FRAMERATE (DRIVE_LOOP_HZ by default) is a minimum, not a cap: startup
+# measures the camera and fails if it is lower, naming the rate to use; leave a
+# few fps of margin. Images are published as fast as the camera sends them.
+MIGHTY_CAMERA_WARMUP_SECS = 5.0     # fail at startup if no image arrives by then
+MIGHTY_CAMERA_FPS_CHECK_SECS = 2.0  # how long startup measures the frame rate
 
 # Optional finite-route look-ahead control.
 PATH_CLOSED = True  # False clamps PID segments and stops at a finite route end

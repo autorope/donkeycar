@@ -5,7 +5,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from donkeycar.parts.mighty import MightyPose, MightyPoseTransform, PoseDriveGate, PoseRecordingGate
+from donkeycar.parts.mighty import (MightyLink, MightyPose, MightyPoseTransform,
+                                    PoseDriveGate, PoseRecordingGate, SDK_INSTALL_HINT)
 
 
 def body_pose(**changes):
@@ -133,6 +134,167 @@ class ReaderTests(unittest.TestCase):
         self.reader.update()
         self.reader.client.start_vio.assert_not_called()
         self.reader.client.command.assert_called_once_with('high_rate_imu', b'status')
+
+
+class LinkTests(unittest.TestCase):
+    """One SDK connection per URL, shared by every Mighty part (plan D5)."""
+    URL = 'http://192.168.7.1'
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.sdk = SimpleNamespace(MightyClient=MagicMock(), MightyWebDevice=MagicMock())
+        patcher = patch.dict('sys.modules', mighty_sdk=self.sdk)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(MightyLink._links.clear)  # runs last: a failure cannot leak a link
+        self.addCleanup(self.assertEqual, MightyLink._links, {})
+
+    def test_same_url_shares_one_client(self):
+        a = MightyLink.acquire(self.URL)
+        b = MightyLink.acquire(self.URL + '/')
+        self.assertIs(a, b)
+        self.assertEqual(a.users, 2)
+        self.sdk.MightyClient.assert_called_once_with(
+            self.sdk.MightyWebDevice.return_value, auto_reconnect=True)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=self.URL, read_chunk_size=1024)
+        a.release()
+        b.release()
+
+    def test_different_urls_get_different_links(self):
+        self.sdk.MightyClient.side_effect = lambda *args, **kwargs: MagicMock()
+        a = MightyLink.acquire(self.URL)
+        b = MightyLink.acquire('http://localhost:8080')
+        self.assertIsNot(a.client, b.client)
+        a.release()
+        b.release()
+
+    def test_first_connect_connects_and_last_release_disconnects(self):
+        a = MightyLink.acquire(self.URL)
+        b = MightyLink.acquire(self.URL)
+        a.connect()
+        b.connect()
+        a.client.connect.assert_called_once()
+        a.release()
+        a.client.disconnect.assert_not_called()
+        self.assertIs(MightyLink.acquire(self.URL), b)
+        b.release()
+        a.client.disconnect.assert_not_called()
+        b.release()
+        a.client.disconnect.assert_called_once()
+        self.assertEqual(MightyLink._links, {})
+
+    def test_connect_reports_whether_it_opened_the_stream(self):
+        link = MightyLink.acquire(self.URL)
+        self.assertTrue(link.connect())
+        self.assertFalse(link.connect())
+        link.client.connect.assert_called_once()
+        link.release()
+
+    def test_close_stream_keeps_users_and_the_next_connect_reopens(self):
+        a = MightyLink.acquire(self.URL)
+        b = MightyLink.acquire(self.URL)
+        a.connect()
+        a.close_stream()
+        a.client.disconnect.assert_called_once()
+        self.assertFalse(a.connected)
+        self.assertEqual(a.users, 2)
+        self.assertIs(MightyLink._links[self.URL], a)
+        a.close_stream()  # already closed: nothing more
+        a.client.disconnect.assert_called_once()
+        self.assertTrue(b.connect())
+        self.assertEqual(a.client.connect.call_count, 2)
+        a.release()
+        b.release()
+
+    def test_link_after_last_release_is_new(self):
+        self.sdk.MightyClient.side_effect = lambda *args, **kwargs: MagicMock()
+        first = MightyLink.acquire(self.URL)
+        first.release()
+        second = MightyLink.acquire(self.URL)
+        self.assertIsNot(first, second)
+        self.assertIsNot(first.client, second.client)
+        second.release()
+
+    def test_read_chunk_size_reaches_the_sdk_device(self):
+        link = MightyLink.acquire(self.URL, read_chunk_size=4096)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=self.URL, read_chunk_size=4096)
+        self.assertEqual(link.read_chunk_size, 4096)
+        link.release()
+
+    def test_later_user_with_another_chunk_size_is_warned(self):
+        first = MightyLink.acquire(self.URL)
+        with self.assertLogs('donkeycar.parts.mighty', 'WARNING') as logs:
+            second = MightyLink.acquire(self.URL, read_chunk_size=65536)
+        self.assertIs(first, second)
+        self.assertEqual(second.read_chunk_size, 1024)
+        self.assertIn('already open with read_chunk_size 1024; ignoring 65536', logs.output[0])
+        first.release()
+        second.release()
+
+    def test_invalid_read_chunk_size(self):
+        for size in [0, -1, 1.5, True, '1024', None]:
+            with self.subTest(size=size), self.assertRaises(ValueError):
+                MightyLink.acquire(self.URL, read_chunk_size=size)
+        self.assertEqual(MightyLink._links, {})
+
+    def test_pose_reader_passes_its_chunk_size(self):
+        reader = MightyPose(log_directory=self.temp.name, read_chunk_size=2048)
+        self.addCleanup(reader.shutdown)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=self.URL, read_chunk_size=2048)
+
+    def test_missing_sdk_gives_install_hint(self):
+        with patch.dict('sys.modules', mighty_sdk=None):
+            with self.assertRaisesRegex(ImportError, 'mighty-protocol'):
+                MightyLink.acquire(self.URL)
+        self.assertIn('pip install', SDK_INSTALL_HINT)
+
+    def test_pose_readers_share_and_release_their_link(self):
+        readers = [MightyPose(log_directory=self.temp.name) for _ in range(2)]
+        for reader in readers:
+            self.addCleanup(reader.shutdown)
+        client = readers[0].client
+        self.assertIs(readers[1].client, client)
+        self.assertIs(readers[0].link, readers[1].link)
+        self.sdk.MightyClient.assert_called_once()
+        for reader in readers:
+            reader.link.connect()
+        client.connect.assert_called_once()
+        unsubscribe = client.on_pose.return_value
+        readers[0].shutdown()
+        readers[0].shutdown()
+        self.assertEqual(unsubscribe.call_count, 1)
+        client.disconnect.assert_not_called()
+        readers[1].shutdown()
+        client.disconnect.assert_called_once()
+
+    def test_timing_failure_releases_the_link(self):
+        # Ed's 6f89eaf7: if MightyTiming cannot start (say the log directory
+        # cannot be created), the reader must not keep its link share.
+        with patch('donkeycar.parts.mighty.MightyTiming',
+                   side_effect=PermissionError('logs: read-only')):
+            with self.assertRaisesRegex(PermissionError, 'read-only'):
+                MightyPose(log_directory=self.temp.name)
+        self.assertEqual(MightyLink._links, {})
+        self.sdk.MightyClient.return_value.disconnect.assert_called_once()
+
+    def test_timing_failure_leaves_other_users_connected(self):
+        other = MightyLink.acquire(self.URL)
+        with patch('donkeycar.parts.mighty.MightyTiming', side_effect=OSError('disk full')):
+            with self.assertRaises(OSError):
+                MightyPose(log_directory=self.temp.name)
+        self.assertEqual(other.users, 1)
+        other.client.disconnect.assert_not_called()
+        other.release()
+
+    def test_update_exit_releases_its_share(self):
+        reader = MightyPose(log_directory=self.temp.name, start_vio=False)
+        self.addCleanup(reader.shutdown)
+        reader.stop.set()
+        reader.update()
+        reader.client.disconnect.assert_called_once()
+        reader.shutdown()
+        reader.client.disconnect.assert_called_once()
 
 
 if __name__ == '__main__':

@@ -23,6 +23,14 @@ CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
+# VEHICLE LOOP
+# Defined first because other settings default to it (e.g. CAMERA_FRAMERATE).
+# The main loop frequency (Hz). Hardware is updated this many times per second.
+DRIVE_LOOP_HZ = 20
+
+# Max loops to run before quitting (useful for testing, None = infinite).
+MAX_LOOPS = None
+
 # ------------------------------------------------------------------------------
 # CAMERA SETUP
 # ------------------------------------------------------------------------------
@@ -34,6 +42,7 @@ MODELS_PATH = os.path.join(CAR_PATH, 'models')
 # 'CSIC': High-speed CSI camera (e.g. Arducam)
 # 'D435': Intel Realsense D435
 # 'OAKD': Luxonis OAK-D
+# 'MIGHTY': Mighty camera over USB Ethernet; IMAGE_W x IMAGE_H must be 16:10, e.g. 160x100
 # 'MOCK': Simulation/Testing or when using GPS path following
 CAMERA_TYPE = "PICAM"
 
@@ -44,8 +53,8 @@ IMAGE_H = 120
 # The depth of the image. 3 for RGB, 1 for Greyscale.
 IMAGE_DEPTH = 3
 
-# The framerate of the camera. Should generally match DRIVE_LOOP_HZ.
-CAMERA_FRAMERATE = 20
+# The framerate of the camera. Defaults to the vehicle loop rate.
+CAMERA_FRAMERATE = DRIVE_LOOP_HZ
 
 # Flip the image vertically (useful if camera is mounted upside down).
 CAMERA_VFLIP = False
@@ -77,6 +86,19 @@ OAKD_RGB_ISP_SCALE_NUM = 1      # Used when OAKD_RGB_OUTPUT_MODE == "isp"
 OAKD_RGB_ISP_SCALE_DEN = 6      # Used when OAKD_RGB_OUTPUT_MODE == "isp"
 OAKD_RGB_SENSOR_CROP_X = None   # Used when OAKD_RGB_OUTPUT_MODE == "video"
 OAKD_RGB_SENSOR_CROP_Y = None   # Used when OAKD_RGB_OUTPUT_MODE == "video"
+
+# Mighty camera specific settings (CAMERA_TYPE = "MIGHTY"); see docs/mighty.md.
+# Frames are 640x400 mono and are scaled down, never stretched: IMAGE_W x IMAGE_H
+# must be 16:10 and no larger (e.g. 160x100, 320x200), or startup fails with
+# the closest sizes to use. The camera is monochrome: set IMAGE_DEPTH = 1.
+# The camera sets its own frame rate (about 18 fps, about 15 while VIO runs).
+# CAMERA_FRAMERATE is the minimum the car needs, not a cap: startup measures the
+# camera and fails if it cannot reach it, naming the rate to use; images are
+# then published as fast as the camera sends them.
+MIGHTY_URL = 'http://192.168.7.1'   # the camera's USB Ethernet address
+MIGHTY_CAMERA_WARMUP_SECS = 5.0     # fail at startup if no image arrives by then
+MIGHTY_CAMERA_FPS_CHECK_SECS = 2.0  # how long startup measures the frame rate
+MIGHTY_READ_CHUNK_BYTES = 1024      # SDK stream read size; 65536 (the SDK default) bunches frames 3 at a time
 
 
 # ------------------------------------------------------------------------------
@@ -696,14 +718,6 @@ SCALE_HEIGHT = None
 # 3. MODES, FEATURES & OPERATION
 #    (Driving modes, Web/Joystick control, Simulation, Logging)
 # ==============================================================================
-
-# VEHICLE LOOP
-# The main loop frequency (Hz). Hardware is updated this many times per second.
-DRIVE_LOOP_HZ = 20
-
-# Max loops to run before quitting (useful for testing, None = infinite).
-MAX_LOOPS = None
-
 
 # AUTOMATION & BEHAVIORS
 
