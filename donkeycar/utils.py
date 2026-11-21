@@ -314,6 +314,9 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
     '''
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
+    if Y_range == 0:
+        # an empty output range maps every input to that one value
+        return int(Y_min // 1)
     XY_ratio = X_range/Y_range
 
     y = ((x-X_min) / XY_ratio + Y_min) // 1
@@ -327,6 +330,9 @@ def map_range_float(x, X_min, X_max, Y_min, Y_max):
     '''
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
+    if Y_range == 0:
+        # an empty output range maps every input to that one value
+        return round(Y_min, 2)
     XY_ratio = X_range/Y_range
 
     y = ((x-X_min) / XY_ratio + Y_min)
@@ -432,6 +438,9 @@ def map_frange(x, X_min, X_max, Y_min, Y_max):
     '''
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
+    if Y_range == 0:
+        # an empty output range maps every input to that one value
+        return Y_min
     XY_ratio = X_range/Y_range
 
     y = ((x-X_min) / XY_ratio + Y_min)

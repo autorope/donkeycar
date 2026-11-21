@@ -92,6 +92,12 @@ class TestMapping(unittest.TestCase):
         assert half == 500
         assert max == 0
 
+    def test_equal_output_range(self):
+        # an empty output range maps every input to that one value
+        assert map_range(-100, -100, 100, 300, 300) == 300
+        assert map_range(0, -100, 100, 300, 300) == 300
+        assert map_range(100, -100, 100, 300, 300) == 300
+
 
 class TestMapRangeFloat(unittest.TestCase):
 
@@ -127,6 +133,13 @@ class TestMapRangeFloat(unittest.TestCase):
         assert 0.0 == map_range_float(0, 0, 100, 0, 2.0)
         assert 1.0 == map_range_float(50, 0, 100, 0, 2.0)
         assert 2.0 == map_range_float(100, 0, 100, 0, 2.0)
+
+    def test_equal_output_range(self):
+        # max_duty=0 on the L298N drivers maps throttle onto [-0, 0]
+        assert 0.0 == map_range_float(-1, -1, 1, -0.0, 0.0)
+        assert 0.0 == map_range_float(0, -1, 1, -0.0, 0.0)
+        assert 0.0 == map_range_float(1, -1, 1, -0.0, 0.0)
+        assert 0.5 == map_range_float(0.3, -1, 1, 0.5, 0.5)
 
 
 class TestMergeDicts(unittest.TestCase):
